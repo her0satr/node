@@ -1,0 +1,53 @@
+<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript" src="bower_components/public_function.js"></script>
+
+<style>
+.message-result { padding: 2px 5px; }
+.message-result div { padding: 2px 0; }
+</style>
+
+<div id="form-message" style="width: 450px; text-align: right; margin: 0 0 50px 0;">
+	<form>
+		<input type="hidden" name="action" value="message_sent" />
+		<div style="padding: 0 0 5px 0;"><textarea name="message" style="width: 450px; height: 50px;"></textarea></div>
+		<input type="button" name="submit" class="btn-ajax" value="ajax" />
+		<input type="button" name="submit" class="btn-socket" value="socket" />
+	</form>
+</div>
+
+<div>
+	<div>Message</div>
+	<div class="message-result" style="width: 450px; border: 1px solid #000000; min-height: 50px;"></div>
+</div>
+
+<script>
+	// ajax request
+	$('#form-message .btn-ajax').click(function() {
+		var param = Func.form.get_value('form-message');
+		Func.ajax({ url: '/action', param: Func.form.get_value('form-message'), callback: function(result) {
+			$('.message-result').append('<div>' + result.post.message + '</div>');
+		} });
+	});
+	
+	// socket request
+	if ("WebSocket" in window) {
+		var ws = new WebSocket("ws://localhost:8080/", "echo-protocol");
+		
+		// socket request
+		$('#form-message .btn-socket').click(function() {
+			ws.send(JSON.stringify({ action: 'message_sent', message: Func.form.get_value('form-message').message }));
+		});
+		
+		// event server
+		ws.onmessage = function (evt) { 
+			eval('var result = ' + evt.data);
+			$('.message-result').append('<div>' + result.message + '</div>');
+		};
+		ws.onclose = function() { 
+			console.log("Connection is closed..."); 
+		};
+	}
+	else {
+	   alert("WebSocket NOT supported by your Browser!");
+	}
+</script>

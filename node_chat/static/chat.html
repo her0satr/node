@@ -2,6 +2,7 @@
 <script type="text/javascript" src="bower_components/public_function.js"></script>
 
 <style>
+.hide { display: none; }
 .message-result { padding: 2px 5px; }
 .message-result div { padding: 2px 0; }
 </style>
@@ -9,18 +10,82 @@
 <div id="form-message" style="width: 450px; text-align: right; margin: 0 0 50px 0;">
 	<form>
 		<input type="hidden" name="action" value="message_sent" />
-		<div style="padding: 0 0 5px 0;"><textarea name="message" style="width: 450px; height: 50px;"></textarea></div>
-		<input type="button" name="submit" class="btn-ajax" value="ajax" />
-		<input type="button" name="submit" class="btn-socket" value="socket" />
+		<div class="cnt-user">
+			<div style="padding: 0 0 5px 0;"><input name="user_name" style="width: 450px;" placeholder="Name" /></div>
+			<div class="btn-user" style="padding: 0 0 5px 0;">
+				<input type="button" name="submit" class="btn-signin" value="Sign In" />
+			</div>
+		</div>
+		<div class="cnt-message hide">
+			<div style="padding: 0 0 5px 0;"><textarea name="message" style="width: 450px; height: 50px;" placeholder="message"></textarea></div>
+			<div class="btn-message" style="padding: 0 0 5px 0;">
+				<input type="button" name="submit" class="btn-ajax" value="ajax" />
+				<input type="button" name="submit" class="btn-socket" value="socket" />
+			</div>
+		</div>
 	</form>
 </div>
 
-<div>
+<div class="list-user"><ul></ul></div>
+
+<div class="cnt-message hide">
 	<div>Message</div>
 	<div class="message-result" style="width: 450px; border: 1px solid #000000; min-height: 50px;"></div>
 </div>
 
 <script>
+	var page = {
+		connect: function(param) {
+			// socket request
+			if ("WebSocket" in window) {
+				var ws = new WebSocket("ws://localhost:8080/", "echo-protocol");
+				ws.onopen = function () {
+					ws.send(JSON.stringify({ action: 'signin', user_name: param.user_name }));
+				};
+				
+				// socket request
+				$('#form-message .btn-socket').click(function() {
+					ws.send(JSON.stringify(Func.form.get_value('form-message')));
+				});
+				
+				// event server
+				ws.onmessage = function (evt) { 
+					eval('var result = ' + evt.data);
+					
+					if (result.action == 'message') {
+						$('.message-result').append('<div>' + result.message + '</div>');
+					}
+					else if (result.action == 'signin') {
+						$('.list-user ul').html('');
+						for (var i = 0; i < result.array_user_name.length; i++) {
+							$('.list-user ul').append('<li>' + result.array_user_name[i].user_name + '</li>');
+						}
+					}
+				};
+				ws.onclose = function() { 
+					console.log("Connection is closed..."); 
+				};
+			}
+			else {
+			   alert("WebSocket NOT supported by your Browser!");
+			}
+		}
+	}
+	
+	// user
+	$('#form-message .btn-signin').click(function(){
+		var param = Func.form.get_value('form-message');
+		if (param.user_name.length == 0) {
+			alert('Please enter Name');
+			return;
+		}
+		
+		// ws open
+		$('.cnt-user').hide();
+		$('.cnt-message').show();
+		page.connect({ user_name: param.user_name });
+	});
+	
 	// ajax request
 	$('#form-message .btn-ajax').click(function() {
 		var param = Func.form.get_value('form-message');
@@ -28,26 +93,4 @@
 			$('.message-result').append('<div>' + result.post.message + '</div>');
 		} });
 	});
-	
-	// socket request
-	if ("WebSocket" in window) {
-		var ws = new WebSocket("ws://localhost:8080/", "echo-protocol");
-		
-		// socket request
-		$('#form-message .btn-socket').click(function() {
-			ws.send(JSON.stringify({ action: 'message_sent', message: Func.form.get_value('form-message').message }));
-		});
-		
-		// event server
-		ws.onmessage = function (evt) { 
-			eval('var result = ' + evt.data);
-			$('.message-result').append('<div>' + result.message + '</div>');
-		};
-		ws.onclose = function() { 
-			console.log("Connection is closed..."); 
-		};
-	}
-	else {
-	   alert("WebSocket NOT supported by your Browser!");
-	}
 </script>

@@ -38,7 +38,7 @@
 		connect: function(param) {
 			// socket request
 			if ("WebSocket" in window) {
-				var ws = new WebSocket("ws://172.18.3.141:8080/");
+				var ws = new WebSocket("ws://192.168.1.14:8080/");
 				ws.onopen = function () {
 					ws.send(JSON.stringify({ action: 'signin', user_name: param.user_name }));
 				};
@@ -51,6 +51,8 @@
 				// event server
 				ws.onmessage = function (evt) { 
 					eval('var result = ' + evt.data);
+					
+					console.log(result);
 					
 					if (result.action == 'message') {
 						$('.message-result').append('<div>' + result.message + '</div>');

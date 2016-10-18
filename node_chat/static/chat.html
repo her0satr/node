@@ -38,7 +38,7 @@
 		connect: function(param) {
 			// socket request
 			if ("WebSocket" in window) {
-				var ws = new WebSocket("ws://192.168.1.14:8080/");
+				var ws = new WebSocket("ws://172.18.3.125:9000/");
 				ws.onopen = function () {
 					ws.send(JSON.stringify({ action: 'signin', user_name: param.user_name }));
 				};
@@ -60,7 +60,9 @@
 					else if (result.action == 'signin') {
 						$('.list-user ul').html('');
 						for (var i = 0; i < result.array_user_name.length; i++) {
-							$('.list-user ul').append('<li>' + result.array_user_name[i].user_name + '</li>');
+							if (typeof(result.array_user_name[i].user_name) != 'undefined') {
+								$('.list-user ul').append('<li>' + result.array_user_name[i].user_name + '</li>');
+							}
 						}
 					}
 				};

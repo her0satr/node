@@ -1,0 +1,47 @@
+<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+
+<style>
+iv.center { height: 10em; position: relative }
+div.center p { margin: 0; position: absolute; top: 50%; left: 50%; margin-right: -50%; transform: translate(-50%, -50%); font-size: 250px; }
+</style>
+
+<input type="button" class="counter-add" value="Add Counter" style="float: left;" />
+<div class="center">
+	<p class="cnt-counter">0</p>
+</div>
+
+<script>
+	var page = {
+		connect: function(param) {
+			// socket request
+			if ("WebSocket" in window) {
+				var ws = new WebSocket("ws://172.18.3.125:9000/");
+				ws.onopen = function () {
+					ws.send(JSON.stringify({ action: 'counter_info' }));
+				};
+				page.ws = ws;
+				
+				// event server
+				ws.onmessage = function (evt) { 
+					eval('var result = ' + evt.data);
+					
+					if (result.action == 'update_counter') {
+						$('.cnt-counter').html(result.counter_no);
+					}
+				};
+				ws.onclose = function() { 
+					console.log("Connection is closed..."); 
+				};
+			}
+			else {
+			   alert("WebSocket NOT supported by your Browser!");
+			}
+		}
+	}
+	page.connect({});
+	
+	// user
+	$('.counter-add').click(function(){
+		page.ws.send(JSON.stringify({ action: 'counter_increment' }));
+	});
+</script>
